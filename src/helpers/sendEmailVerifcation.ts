@@ -1,0 +1,31 @@
+import { resend } from "@/lib/resend";
+import { verificaitonEmail } from "../../emails/verifyEmailTemplate";
+import { ApiResponse } from "@/types/ApiRespoonse";
+
+type args = {
+  username: string;
+  verifyCode: string;
+  email: string
+};
+
+export async function sendVerifyMail({
+  username,
+  verifyCode,
+  email
+}: args): Promise<ApiResponse> {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Acme <onboarding@resend.dev>',
+      to: email,
+      subject: "Verify your email",
+      react: await verificaitonEmail({ username, verifyCode }),
+    });
+
+    if (error) {
+      return { sucess: false, message: "Failed to send email", error };
+    }
+    return { sucess: true, message: "Email sent successfully", data };
+  } catch (error) {
+    return { sucess: false, message: "Failed to send email", error };
+  }
+}
