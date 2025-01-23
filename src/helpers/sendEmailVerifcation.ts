@@ -22,10 +22,10 @@ export async function sendVerifyMail({
     });
 
     if (error) {
-      return { sucess: false, message: "Failed to send email", error };
+      return { success: false, message: "Failed to send email", error };
     }
-    return { sucess: true, message: "Email sent successfully", data };
+    return { success: true, message: "Email sent successfully", data };
   } catch (error) {
-    return { sucess: false, message: "Failed to send email", error };
+    return { success: false, message: "Failed to send email", error };
   }
 }
