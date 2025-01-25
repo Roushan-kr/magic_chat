@@ -24,10 +24,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const isUerExixtWithEmail = await userModel.findOne({ email });
+    const isUerExistsWithEmail = await userModel.findOne({ email });
 
-    if (isUerExixtWithEmail) {
-        if (isUerExixtWithEmail.isVerified) {
+    if (isUerExistsWithEmail) {
+        if (isUerExistsWithEmail.isVerified) {
           return Response.json(
             { success: false, message: "User with this email already exists" },
             { status: 400 }
@@ -35,16 +35,16 @@ export async function POST(req: Request) {
         }
         // if user is not verified then send verification code again
 
-        // sand email verification code with 10 min expiry without updatung passwd
+        // sand email verification code with 10 min expiry without updating passwd
         const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-        isUerExixtWithEmail.verifyCode = newCode;
-        isUerExixtWithEmail.verifyCodeExpires = new Date(Date.now() + 600000);
-        await isUerExixtWithEmail.save();
+        isUerExistsWithEmail.verifyCode = newCode;
+        isUerExistsWithEmail.verifyCodeExpires = new Date(Date.now() + 600000);
+        await isUerExistsWithEmail.save();
 
         const { success, message, error } = await sendVerifyMail({
-          username: isUerExixtWithEmail.uname,
+          username: isUerExistsWithEmail.uname,
           email,
-          verifyCode: isUerExixtWithEmail.verifyCode,
+          verifyCode: isUerExistsWithEmail.verifyCode,
         });
         
         return Response.json({success, message, error}, {status: 201}); 

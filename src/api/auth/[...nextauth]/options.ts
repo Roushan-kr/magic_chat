@@ -11,13 +11,14 @@ export const authOptions: NextAuthOptions = {
       name: "Credentials",
       credentials: {
         email: { lable: "Email", type: "text", placeholder: "Enter Email" },
+        username: { lable: "username", type: "text", placeholder: "Enter username" },
         password: { label: "password", type: "password" },
       },
       async authorize(Credential: any): Promise<any> {
         dbConnect();
         try {
           const user = await userModel.findOne({
-            $or: [{ email: Credential.email }, { uname: Credential.username }],
+            $or: [{ email: Credential.email }, { uname: Credential?.username }],
           });
           if (!user) {
             throw new Error("No user found");
@@ -32,12 +33,12 @@ export const authOptions: NextAuthOptions = {
           }
           return user;
         } catch (error: any) {
-          throw new Error(error);
+          throw new Error(error); // else return null to display error 
         }
       },
     }),
   ],
-  callbacks:{
+  callbacks:{ // may run sequesntialy
     async jwt({token, user}) {
         if(user){
             token._id = user._id?.toString()
