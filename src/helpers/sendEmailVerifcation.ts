@@ -16,7 +16,7 @@ export async function sendVerifyMail({
   try {
     const { data, error } = await resend.emails.send({
       from: 'Acme <onboarding@resend.dev>',
-      to: email,
+      to: email, // for non domain verifaction use regesterd mail
       subject: "Verify your email",
       react: await verificaitonEmail({ username, verifyCode }),
     });
