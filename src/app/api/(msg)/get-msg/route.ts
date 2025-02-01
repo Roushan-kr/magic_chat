@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const user: User = session?.user;
 
   if (!session || !user) {
-    NextResponse.json(
+    return NextResponse.json(
       {
         message: "You are not authenticated",
         success: false,
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     if (!userMsg || userMsg.length === 0) {
       return NextResponse.json(
         {
-          message: "unable ti get msg",
+          message: "unable to get msg",
           success: false,
         },
         { status: 400 }
