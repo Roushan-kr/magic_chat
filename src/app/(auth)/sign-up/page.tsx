@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod"; // imports entire as namespace "z"
-import { useDebounceValue } from "usehooks-ts";
+import { useDebounceCallback } from "usehooks-ts";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { signUpSchema } from "@/schemas/signUpSchema";
@@ -30,7 +30,7 @@ function SignIn() {
   const [checkUnameRes, setCheckUnameRes] = useState(false);
   const [isSubmiting, setIsSubmiting] = useState(false);
 
-  const debouncedUName = useDebounceValue(userName, 500);
+  const debounce = useDebounceCallback(setUserName, 300);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -45,12 +45,12 @@ function SignIn() {
 
   useEffect(() => {
     const checkUniqUName = async () => {
-      if (debouncedUName) {
+      if (userName) {
         setCheckUnameRes(true);
         setUserNamemsg("");
         try {
           const res = await axios.get(
-            `/api/auth/cuiq-uname?uname=${debouncedUName}`
+            `/api/auth/cuiq-uname?uname=${userName}`
           );
           setUserNamemsg(res.data?.message);
         } catch (error) {
@@ -64,7 +64,7 @@ function SignIn() {
       }
     };
     checkUniqUName();
-  }, [debouncedUName]);
+  }, [userName]);
 
   const onSubmit = async (values: z.infer<typeof signUpSchema>) => {
     setIsSubmiting(true);
@@ -112,14 +112,29 @@ function SignIn() {
                       {...field}
                       onChange={(e) => {
                         field.onChange(e);
-                        setUserName(e.target.value);
+                        debounce(e.target.value);
                       }}
                     />
                   </FormControl>
-                  <FormDescription>Enter your username.</FormDescription>
+                  <FormDescription hidden={true} >Enter your username.</FormDescription>
+                  {
+                    checkUnameRes && <Loader2 className="animate-spin text-sm text-right"/> 
+                  }
+                  {!checkUnameRes && userNamemsg && (
+                    <p
+                      className={`text-sm ${
+                        userNamemsg === 'Username is abhilable'
+                          ? 'text-green-500'
+                          : 'text-red-500'
+                      }`}
+                    >
+                      {userNamemsg}
+                    </p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
+              
             />
             <FormField
               control={form.control}
@@ -130,7 +145,7 @@ function SignIn() {
                   <FormControl>
                     <Input placeholder="Email" {...field} />
                   </FormControl>
-                  <FormDescription>Enter your email.</FormDescription>
+                  <FormDescription hidden={true}>Enter your email.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -144,7 +159,7 @@ function SignIn() {
                   <FormControl>
                     <Input placeholder="Passowrd" type="password" {...field} />
                   </FormControl>
-                  <FormDescription>Enter your Password.</FormDescription>
+                  <FormDescription hidden={true}>Enter your Password.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
