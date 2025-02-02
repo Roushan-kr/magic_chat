@@ -73,7 +73,7 @@ function SignIn() {
       if (res.data.success) {
         toast({
           title: "successfully signup",
-          description: res.data.message || "User registed successfuly",
+          description: res.data.message || "User registed successfuly now verify your mail",
         });
         router.replace(`/verify/${userName}`);
       }
