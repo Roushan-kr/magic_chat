@@ -27,7 +27,7 @@ import Link from "next/link";
 function SignIn() {
   const [userName, setUserName] = useState("");
   const [userNamemsg, setUserNamemsg] = useState("");
-  const [checkUnameRes, setCheckUnameRes] = useState(false);
+  const [checkValidUName, setCheckValidUName] = useState(false);
   const [isSubmiting, setIsSubmiting] = useState(false);
 
   const debounce = useDebounceCallback(setUserName, 300);
@@ -46,7 +46,7 @@ function SignIn() {
   useEffect(() => {
     const checkUniqUName = async () => {
       if (userName) {
-        setCheckUnameRes(true);
+        setCheckValidUName(true);
         setUserNamemsg("");
         try {
           const res = await axios.get(
@@ -56,10 +56,10 @@ function SignIn() {
         } catch (error) {
           const axiosError = error as AxiosError<ApiResponse>;
           setUserNamemsg(
-            axiosError.response?.data?.message ?? " Error achecking username "
+            axiosError.response?.data?.message ?? " Error checking username "
           );
         } finally {
-          setCheckUnameRes(false);
+          setCheckValidUName(false);
         }
       }
     };
@@ -118,9 +118,9 @@ function SignIn() {
                   </FormControl>
                   <FormDescription hidden={true} >Enter your username.</FormDescription>
                   {
-                    checkUnameRes && <Loader2 className="animate-spin text-sm text-right"/> 
+                    checkValidUName && <Loader2 className="animate-spin text-sm text-right"/> 
                   }
-                  {!checkUnameRes && userNamemsg && (
+                  {!checkValidUName && userNamemsg && (
                     <p
                       className={`text-sm ${
                         userNamemsg === 'Username is abhilable'
