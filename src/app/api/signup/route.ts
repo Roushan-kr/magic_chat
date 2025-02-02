@@ -58,7 +58,7 @@ export async function POST(req: Request) {
         password: hashPasswd,
         verifyCode: Math.floor(100000 + Math.random() * 900000).toString(),
         verifyCodeExpires: Date.now() + 600000,
-      },{ new: true });
+      });
 
       await newUser.save();
 

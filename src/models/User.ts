@@ -30,7 +30,7 @@ const UserSchema: Schema<User> = new Schema({
     isAcceptingMessage: { type: Boolean, default: true },
     messages: [MessageSchema],
     isVerified:{ type:Boolean, default:false}
-});
+},{timestamps:true});
 
 const userModel = mongoose.models.User  as mongoose.Model<User> || mongoose.model<User>('User', UserSchema);
 
