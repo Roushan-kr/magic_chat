@@ -22,7 +22,7 @@ import { Loader2 } from "lucide-react";
 
 function verify() {
   const router = useRouter();
-  const params = useParams<{ username: string }>();
+  const params = useParams<{ userName: string }>();
   const [isSubmiting, setIsSubmiting] = useState(false);
 
   const form = useForm<z.infer<typeof verifySchema>>({
@@ -37,7 +37,7 @@ function verify() {
     setIsSubmiting(true);
     try {
       const res = await axios.get<ApiResponse>(
-        `/api/auth/verify?uname=${params.username}&?code=${values.verifyCode}`
+        `/api/auth/verify?uname=${params.userName}&?code=${values.verifyCode}`
       );
       if (res.data?.success) {
         toast({
