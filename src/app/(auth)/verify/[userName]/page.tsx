@@ -37,7 +37,7 @@ function verify() {
     setIsSubmiting(true);
     try {
       const res = await axios.get<ApiResponse>(
-        `/api/auth/verify?uname=${params.userName}&?code=${values.verifyCode}`
+        `/api/auth/verify?uname=${params.userName}&code=${values.verifyCode}`
       );
       if (res.data?.success) {
         toast({

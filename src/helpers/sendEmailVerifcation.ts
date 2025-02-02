@@ -15,7 +15,7 @@ export async function sendVerifyMail({
 }: args): Promise<ApiResponse> {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'Acme <onboarding@resend.dev>',
+      from: 'Admin <admin@devroush.tech>',
       to: email, // for non domain verifaction use regesterd mail
       subject: "Verify your email",
       react: await verificaitonEmail({ username, verifyCode }),

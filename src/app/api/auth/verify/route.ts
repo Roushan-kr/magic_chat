@@ -7,7 +7,8 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   const code = decodeURIComponent(req.nextUrl.searchParams.get("code") || "");
   const uname = decodeURIComponent(req.nextUrl.searchParams.get("uname") || "");
-
+  console.log(code,"here");
+  
   if (!code || !uname) {
     NextResponse.json(
       { message: "Invalid request", success: false },
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
   await dbConnect();
   try {
     // verify code and uname syntex
-    const isValidCode = verifySchema.safeParse(code);
+    const isValidCode = verifySchema.safeParse({verifyCode: code});
     const isValiduname = uerNameValidation.safeParse(uname);
 
     if (isValidCode.success === false || isValiduname.success === false) {

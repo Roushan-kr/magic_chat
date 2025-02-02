@@ -18,7 +18,7 @@ export const authOptions: NextAuthOptions = {
         dbConnect();
         try {
           const user = await userModel.findOne({
-            $or: [{ email: Credential.email }, { uname: Credential?.username }],
+            $or: [{ email: Credential.identifier }, { uname: Credential?.identifier }],
           });
           if (!user) {
             throw new Error("No user found");
