@@ -44,7 +44,7 @@ function page() {
       const res = await axios.get<ApiResponse>("/api/accept-msg");
       if (!res.data.success) {
         toast({
-          title: "unable to get Your status",
+          title: "accept message status",
           description: res.data?.message,
         });
       }
@@ -52,7 +52,7 @@ function page() {
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;
       toast({
-        title: "unable to check",
+        title: "accept message status",
         description: axiosError.response?.data.message || "Network Error",
         variant: "destructive",
       });
@@ -83,7 +83,7 @@ function page() {
       } catch (error) {
         const axiosError = error as AxiosError<ApiResponse>;
         toast({
-          title: "unable to check",
+          title: "User Message Status",
           description: axiosError.response?.data.message || "Network Error",
           variant: "destructive",
         });
@@ -130,8 +130,9 @@ function page() {
   if (!session || !session.user) {
     return <>Please Login to Proside</>;
   }
-  const { uname } = session.user;
-  const profileUrl = new URL(`u/${uname}`, window.location.origin).toString();
+  const { username } = session.user;
+  
+  const profileUrl = new URL(`u/${username}`, window.location.origin).toString();
   const copyToClipboard = async () => {
     navigator.clipboard
       .writeText(profileUrl)
