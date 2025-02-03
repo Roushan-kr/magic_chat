@@ -2,8 +2,6 @@ import React from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -25,6 +23,7 @@ import axios, { AxiosError } from "axios";
 import { ApiResponse } from "@/types/ApiRespoonse";
 import { toast } from "@/hooks/use-toast";
 import dayjs from "dayjs";
+import { X } from "lucide-react";
 
 
 type MessageCardProps = {
