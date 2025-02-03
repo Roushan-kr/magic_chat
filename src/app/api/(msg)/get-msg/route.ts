@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   try {
     const userMsg = await userModel.aggregate([
       {
-        $match: _id,
+        $match: {_id},
       },
       {
         $unwind: "$messages",
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     if (!userMsg || userMsg.length === 0) {
       return NextResponse.json(
         {
-          message: "unable to get msg",
+          message: "User Doesnot have any message ",
           success: false,
         },
         { status: 400 }
@@ -62,10 +62,10 @@ export async function GET(req: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (error:any) {
     return NextResponse.json(
       {
-        message: "someting went worng",
+        message:"someting went worng",
         success: false,
       },
       { status: 500 }
