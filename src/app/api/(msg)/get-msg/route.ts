@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
       {
         message: "fetch success",
         success: true,
-        data: userMsg[0]?.messages,
+        messages: userMsg[0]?.messages,
       },
       { status: 200 }
     );

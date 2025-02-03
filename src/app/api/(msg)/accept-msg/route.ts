@@ -81,28 +81,29 @@ export async function GET(req: NextRequest) {
 
   try {
     const user = await userModel.findById(_id);
-    if(!user){
-       return NextResponse.json({
-            message: "unable to get user",
-            success: false,
-          },
-          { status: 404 }
-        )
+    if (!user) {
+      return NextResponse.json(
+        {
+          message: "unable to get user",
+          success: false,
+        },
+        { status: 404 }
+      );
     }
-    return NextResponse.json({
+    return NextResponse.json(
+      {
         success: true,
-        data:{
-            isUserAccepting: user?.isAcceptingMessage
-        }
+        isAcceptingMessage: user?.isAcceptingMessage,
       },
-      { status: 200 })
-
-  } catch (error:any) {
-    return NextResponse.json({
+      { status: 200 }
+    );
+  } catch (error: any) {
+    return NextResponse.json(
+      {
         message: error.message || "Someting went worng",
         success: false,
       },
       { status: 500 }
-    )
+    );
   }
 }
