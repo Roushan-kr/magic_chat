@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
 
   const { username, content } = await req.json();
   try {
-    const msg = msgSchema.safeParse(content);
+    const msg = msgSchema.safeParse({content});
     // handle the parsed message
 
     if (!msg.success) {
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     await user.save();
     return NextResponse.json(
         {
-          message: "msg added success",
+          message: "msg sent success",
           success: true,
         },
         { status: 200 }
