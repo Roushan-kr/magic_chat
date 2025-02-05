@@ -64,7 +64,7 @@ function page() {
   const fetchUserMsg = useCallback(
     async (refresh: boolean = false) => {
       setIsLoading(true);
-      setIsSwitchLoading(false);
+      setIsSwitchLoading(true);
       try {
         const res = await axios.get<ApiResponse>("/api/get-msg");
         if (!res.data.success) {
@@ -89,7 +89,7 @@ function page() {
         });
       } finally {
         setIsLoading(false);
-        setIsSwitchLoading(true);
+        setIsSwitchLoading(false);
       }
     },
     [setMessages, setIsLoading]
