@@ -16,17 +16,13 @@ export async function POST(req: Request) {
       maxTokens: 300,
       prompt,
     });
-
-    result.toDataStreamResponse();
+    
+    return result.toDataStreamResponse();
   } catch (error) {
+    console.error("Error generating response:", error);
     return NextResponse.json(
-      {
-        error,
-        success: false,
-      },
-      {
-        status: 500,
-      }
+      { success: false, error: "Internal Server Error" },
+      { status: 500 }
     );
   }
 }
