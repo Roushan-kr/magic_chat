@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod"; 
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -39,8 +39,16 @@ function Page() {
   const { watch, setValue } = form;
   const userMsgContent = watch("content");
 
-  const { complete, input, setInput, handleInputChange } = useCompletion({
+  const { complete, input, setInput, handleInputChange,completion } = useCompletion({
     api: "/api/suggest-msg",
+    onResponse: (res) => {
+      if (res.status === 429) {
+        toast({
+          title: "Limit exceed",
+          description: "You are being rate limited. Please try again later.",
+        });
+      }
+    },
     onFinish: (prompt, completion) => {
       if (!completion) {
         setSuggestMsg(["No suggestions available"]);
@@ -48,7 +56,7 @@ function Page() {
       }
 
       try {
-        const messages = completion.split(",").map((msg) => msg.trim());
+        const messages = completion.split(", \"").map((msg) => msg.trim());
         setSuggestMsg(messages);
       } catch (error) {
         setSuggestMsg(["Error processing suggestions"]);
@@ -108,7 +116,10 @@ function Page() {
         </h2>
         <div className="flex flex-col space-y-4">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="w-full space-y-6"
+            >
               <FormField
                 control={form.control}
                 name="content"
@@ -150,7 +161,8 @@ function Page() {
                       const newValue = `${userMsgContent} ${msg}`.trim();
                       setValue("content", newValue);
                       setInput(newValue); // ✅ Ensure local state updates as well
-                    }} >
+                    }}
+                  >
                     {msg}
                   </span>
                 ))}
