@@ -11,14 +11,22 @@ export const authOptions: NextAuthOptions = {
       name: "Credentials",
       credentials: {
         email: { lable: "Email", type: "text", placeholder: "Enter Email" },
-        username: { lable: "username", type: "text", placeholder: "Enter username" },
+        username: {
+          lable: "username",
+          type: "text",
+          placeholder: "Enter username",
+        },
         password: { label: "password", type: "password" },
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       async authorize(Credential: any): Promise<any> {
         dbConnect();
         try {
           const user = await userModel.findOne({
-            $or: [{ email: Credential.identifier }, { uname: Credential?.identifier }],
+            $or: [
+              { email: Credential.identifier },
+              { uname: Credential?.identifier },
+            ],
           });
           if (!user) {
             throw new Error("No user found");
@@ -32,38 +40,42 @@ export const authOptions: NextAuthOptions = {
             throw new Error("Password is incorrect");
           }
           return user;
-        } catch (error: any) {
-          throw new Error(error); // else return null to display error 
+        } catch (error: unknown) {
+          if (error instanceof Error) {
+            throw new Error(error.message);
+          }
+          console.log(error);
+          throw new Error("An unknown error occurred");
         }
       },
     }),
   ],
-  callbacks:{ // may run sequesntialy
-    async jwt({token, user}) {
-        if(user){
-            token._id = user._id?.toString()
-            token.isVerified = user.isVerified;
-            token.isAcceptingMessage = user.isAcceptingMessage
-            token.username = user.uname
-        }
-        return token
+  callbacks: {
+    // may run sequesntialy
+    async jwt({ token, user }) {
+      if (user) {
+        token._id = user._id?.toString();
+        token.isVerified = user.isVerified;
+        token.isAcceptingMessage = user.isAcceptingMessage;
+        token.username = user.uname;
+      }
+      return token;
     },
-    async session({session, token}){
-        if(token){
-            session.user._id = token._id
-            session.user.isAcceptingMessage= token.isAcceptingMessage
-            session.user.isVerified = token.isVerified
-            session.user.username= token.username
-        }
-        return session
-    }
-
+    async session({ session, token }) {
+      if (token) {
+        session.user._id = token._id;
+        session.user.isAcceptingMessage = token.isAcceptingMessage;
+        session.user.isVerified = token.isVerified;
+        session.user.username = token.username;
+      }
+      return session;
+    },
   },
-  pages:{
-    signIn:"/sign-in"
+  pages: {
+    signIn: "/sign-in",
   },
-  session:{
-    strategy:"jwt"
+  session: {
+    strategy: "jwt",
   },
   secret: process.env.AUTH_SECRET,
 };

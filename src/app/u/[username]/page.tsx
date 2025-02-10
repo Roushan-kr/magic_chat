@@ -39,7 +39,7 @@ function Page() {
   const { watch, setValue } = form;
   const userMsgContent = watch("content");
 
-  const { complete, input, setInput, handleInputChange,completion } = useCompletion({
+  const { complete, input, setInput, handleInputChange } = useCompletion({
     api: "/api/suggest-msg",
     onResponse: (res) => {
       if (res.status === 429) {
@@ -59,6 +59,7 @@ function Page() {
         const messages = completion.split(", \"").map((msg) => msg.trim());
         setSuggestMsg(messages);
       } catch (error) {
+        console.log(error)
         setSuggestMsg(["Error processing suggestions"]);
       }
     },
@@ -112,7 +113,7 @@ function Page() {
 
       <div className="mb-4">
         <h2 className="text-lg font-semibold mb-2">
-          Let's Chat With {username.toUpperCase()}
+          Let`&apos;`s Chat With {username.toUpperCase()}
         </h2>
         <div className="flex flex-col space-y-4">
           <Form {...form}>
