@@ -56,7 +56,7 @@ function Page() {
       }
 
       try {
-        const messages = completion.split(", \"").map((msg) => msg.trim());
+        const messages = completion.split(", ").map((msg) => msg.trim());
         setSuggestMsg(messages);
       } catch (error) {
         console.log(error)
