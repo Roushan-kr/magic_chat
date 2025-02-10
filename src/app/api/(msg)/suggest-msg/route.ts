@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const userPrompt = `${parseMsg.data.content} , now create a list of string response seprated by ',' using the above text like a suggesation with that context as user text response within 5 to 10 words also remember it is response like text communaction act like a keybord `;
+    const userPrompt = `${parseMsg.data.content} , now create a list of string response seprated by '|| ' using the above text like a suggesation with that context as user text response within 5 to 10 words also remember it is response like text communaction act like a keybord don't include that text which i give prevous to you just give || saprated little sentence suggesation `;
 
     const result = streamText({
       model: google("gemini-1.5-pro-latest"

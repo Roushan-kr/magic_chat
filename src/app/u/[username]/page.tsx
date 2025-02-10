@@ -39,6 +39,10 @@ function Page() {
   const { watch, setValue } = form;
   const userMsgContent = watch("content");
 
+  function extractCSV(text:string) {
+    return text.match(/[\w\s]+(?:,[\w\s]+)*/g)?.[0] || "";
+  }
+
   const { complete, input, setInput, handleInputChange } = useCompletion({
     api: "/api/suggest-msg",
     onResponse: (res) => {
@@ -56,7 +60,7 @@ function Page() {
       }
 
       try {
-        const messages = completion.split(", ").map((msg) => msg.trim());
+        const messages = completion.split("||").map((msg) => msg.trim()).map(s=>extractCSV(s));
         setSuggestMsg(messages);
       } catch (error) {
         console.log(error)
