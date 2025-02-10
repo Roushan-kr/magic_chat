@@ -6,9 +6,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { messageid: string } }
+  { params }: { params: Promise<{ messageid: string }> }
 ) {
-  const { messageid } = params;
+  const { messageid } = await params;
   if (!messageid) {
     return NextResponse.json(
       {
