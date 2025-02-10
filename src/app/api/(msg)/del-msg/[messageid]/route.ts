@@ -53,9 +53,13 @@ export async function DELETE(
       { success: true, message: "message deleted successfull" },
       { status: 200 }
     );
-  } catch (error) {
+  }catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "something went wrong";
     return NextResponse.json(
-      { success: false, message: "unable to delete message" },
+      {
+        message: errorMessage,
+        success: false,
+      },
       { status: 500 }
     );
   }

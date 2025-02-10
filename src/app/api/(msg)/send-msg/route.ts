@@ -52,10 +52,11 @@ export async function POST(req: NextRequest) {
       );
    
    
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "something went wrong";
     return NextResponse.json(
       {
-        message: error.message || "somting went worng",
+        message: errorMessage,
         success: false,
       },
       { status: 500 }

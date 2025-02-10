@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 
-function verify() {
+function Verify() {
   const router = useRouter();
   const params = useParams<{ userName: string }>();
   const [isSubmiting, setIsSubmiting] = useState(false);
@@ -107,4 +107,4 @@ function verify() {
   );
 }
 
-export default verify;
+export default Verify;

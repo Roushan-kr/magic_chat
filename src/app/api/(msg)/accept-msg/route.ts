@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   await dbConnect();
   const session = await getServerSession(authOptions);
   const user: User = session?.user;
@@ -97,10 +97,11 @@ export async function GET(req: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "something went wrong";
     return NextResponse.json(
       {
-        message: error.message || "Someting went worng",
+        message: errorMessage,
         success: false,
       },
       { status: 500 }

@@ -2,10 +2,10 @@ import userModel from "@/models/User";
 import { authOptions } from "../../auth/[...nextauth]/options";
 import { getServerSession, User } from "next-auth";
 import dbConnect from "@/lib/dbconnect";
-import { NextRequest, NextResponse } from "next/server";
+import {  NextResponse } from "next/server";
 import mongoose from "mongoose";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   await dbConnect();
 
   const session = await getServerSession(authOptions);
@@ -62,10 +62,11 @@ export async function GET(req: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error:any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "something went wrong";
     return NextResponse.json(
       {
-        message:"someting went worng",
+        message: errorMessage,
         success: false,
       },
       { status: 500 }

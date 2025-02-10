@@ -56,9 +56,13 @@ export async function GET(req: NextRequest) {
     { status: 400 }
     );
 
-  } catch (error) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "something went wrong";
     return NextResponse.json(
-      { message: "Something went wrong", success: false },
+      {
+        message: errorMessage,
+        success: false,
+      },
       { status: 500 }
     );
   }

@@ -15,7 +15,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 // using optemestic UI action forst displayed to usr then updated and action taken
-function page() {
+function Page() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSwitchLoading, setIsSwitchLoading] = useState(false);
@@ -139,7 +139,7 @@ function page() {
       .then(() => {
         toast({ title: "Text copied to clipboard successfully" });
       })
-      .catch((error) => {
+      .catch(() => {
         toast({ title: "Error copying text to clipboard" });
       });
   };
@@ -205,4 +205,4 @@ function page() {
   );
 }
 
-export default page;
+export default Page;

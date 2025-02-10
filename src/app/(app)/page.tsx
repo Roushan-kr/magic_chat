@@ -27,7 +27,7 @@ export default function Home() {
           opts={{
             align: "start",
           }}
-          plugins={[Autoplay({ delay: 2000 }) as any]}
+          plugins={[Autoplay({ delay: 2000 }) as unknown as PluginType]}
           className="w-full max-w-sm"
         >
           <CarouselContent>
