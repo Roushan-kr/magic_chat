@@ -113,7 +113,7 @@ function Page() {
 
       <div className="mb-4">
         <h2 className="text-lg font-semibold mb-2">
-          Let`&apos;`s Chat With {username.toUpperCase()}
+          Let&apos;s Chat With {username.toUpperCase()}
         </h2>
         <div className="flex flex-col space-y-4">
           <Form {...form}>
