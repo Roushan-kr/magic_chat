@@ -21,7 +21,7 @@ function Page() {
   const [isSwitchLoading, setIsSwitchLoading] = useState(false);
 
   const handelDelMsg = (msgId: string) => {
-    setMessages(messages.filter((msg) => msg._id !== msgId));
+    setMessages(messages.filter((msg) => msg._id.toString() !== msgId));
   };
 
   const { data: session } = useSession();
@@ -41,7 +41,7 @@ function Page() {
   const fetchAcceptMsg = useCallback(async () => {
     setIsSwitchLoading(true);
     try {
-      const res = await axios.get<ApiResponse>("/api/accept-msg");
+      const res = await axios.get<ApiResponse>("/api/msg/accept");
       if (!res.data.success) {
         toast({
           title: "accept message status",
@@ -66,7 +66,7 @@ function Page() {
       setIsLoading(true);
       setIsSwitchLoading(true);
       try {
-        const res = await axios.get<ApiResponse>("/api/get-msg");
+        const res = await axios.get<ApiResponse>("/api/msg");
         if (!res.data.success) {
           toast({
             title: "unable to get Your Message",
@@ -103,7 +103,7 @@ function Page() {
 
   const handelSwitchChange = async () => {
     try {
-      const res = await axios.post<ApiResponse>("/api/accept-msg", {
+      const res = await axios.post<ApiResponse>("/api/msg", {
         acceptMsg: !acceptMessage,
       });
       if (!res.data.success) {

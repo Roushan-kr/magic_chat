@@ -69,7 +69,7 @@ function SignIn() {
   const onSubmit = async (values: z.infer<typeof signUpSchema>) => {
     setIsSubmiting(true);
     try {
-      const res = await axios.post<ApiResponse>("/api/signup", values);
+      const res = await axios.post<ApiResponse>("/api/auth/signup", values);
       if (res.data.success) {
         toast({
           title: "successfully signup",

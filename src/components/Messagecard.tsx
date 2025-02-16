@@ -34,13 +34,17 @@ type MessageCardProps = {
 function Messagecard({ message, onMessageDelete }: MessageCardProps) {
  async function handleDeleteConfirm(): Promise<void> {
     try {
-      const res = await axios.delete<ApiResponse>(`/api/del-msg/${message._id}`,)
+      const res = await axios.delete<ApiResponse>(`/api/msg/`,{
+        data:{
+          messageid:message._id
+        }
+      })
         if(res.data.success){
           toast({
             title:"Message delated"
           })
         }
-        onMessageDelete(message._id as string)
+        onMessageDelete(message._id.toString())
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>
       toast({

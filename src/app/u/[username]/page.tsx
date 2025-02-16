@@ -44,7 +44,7 @@ function Page() {
   }
 
   const { complete, input, setInput, handleInputChange } = useCompletion({
-    api: "/api/suggest-msg",
+    api: "/api/suggest",
     onResponse: (res) => {
       if (res.status === 429) {
         toast({
@@ -87,7 +87,7 @@ function Page() {
   async function onSubmit(data: z.infer<typeof msgSchema>) {
     setIsMsgSentLoading(true);
     try {
-      const response = await axios.post<ApiResponse>("/api/send-msg", {
+      const response = await axios.post<ApiResponse>("/api/msg", {
         username,
         content: data.content,
       });
