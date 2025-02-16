@@ -3,7 +3,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import os from 'os'
 import process from 'process'
 
-export async function GET(request: NextRequest) {
+export async function GET(req: NextRequest) {
+  const apiKey = req.headers.get("x-api-key");
+
+  if (!apiKey || apiKey !== process.env.NEXT_PUBLIC_API_KEY) {
+    return NextResponse.json(
+      { status: "error", message: "Unauthorized" },
+      { status: 401 }
+    );
+  }
   try {
     // Collect system and application health metrics
     const healthCheck = {
