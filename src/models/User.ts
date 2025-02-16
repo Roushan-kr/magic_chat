@@ -1,85 +1,80 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
-import bcrypt from 'bcrypt';
+import mongoose, { Schema, Document, Types, Model } from "mongoose";
+import bcrypt from "bcrypt";
 
+// Message Schema
 export interface Message extends Document {
-  _id: Types.ObjectId; // Explicitly adding _id
-  content: string;
+  _id: Types.ObjectId;
+  text: string;
   createdAt: Date;
 }
 
-const MessageSchema: Schema<Message> = new Schema({
-  content: { type: String, required: true },
+const MessageSchema = new Schema<Message>({
+  text: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
 });
 
-export interface TopicMessage extends Document {
-  _id: Types.ObjectId; // Explicitly adding _id
-  name: string;
-  messages: [Message];
+//  Topic Schema
+export interface Topic extends Document {
+  _id: Types.ObjectId;
+  title: string;
+  messages: Message[];
   createdAt: Date;
 }
 
-const TopicSchema: Schema<TopicMessage> = new Schema({
-  name: {
-    type: String,
-    required: true,
-    lowercase: true,
-    trim: true,
-  },
+const TopicSchema = new Schema<Topic>({
+  title: { type: String, required: true, lowercase: true, trim: true },
   messages: [MessageSchema],
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+  createdAt: { type: Date, default: Date.now },
 });
 
+//  User Schema
 export interface User extends Document {
-  _id: Types.ObjectId; // Explicitly adding _id
+  _id: Types.ObjectId;
   uname: string;
   email: string;
   password: string;
-  verifyCode: string;
-  verifyCodeExpires: Date;
-  isAcceptingMessage: boolean;
+  verifyCode?: string;
+  verifyExpires?: Date;
+  allowMessages: boolean;
   messages: Message[];
-  isVerified: boolean;
-  topics?: TopicMessage[];
+  verified: boolean;
+  topics?: Topic[];
 }
 
-const UserSchema: Schema<User> = new Schema(
+const UserSchema = new Schema<User>(
   {
     uname: {
       type: String,
-      required: [true, "userName is requied !!"],
+      required: [true, "Username is required!"],
       trim: true,
       unique: true,
+      index: true, 
     },
     email: {
       type: String,
       required: true,
       unique: true,
-      match: [/^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/, "Invalid email !!"],
+      match: [/^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/, "Invalid email!"],
+      index: true, 
     },
     password: { type: String, required: true },
     verifyCode: { type: String },
-    verifyCodeExpires: { type: Date },
-    isAcceptingMessage: { type: Boolean, default: true },
+    verifyExpires: { type: Date },
+    allowMessages: { type: Boolean, default: true },
     messages: [MessageSchema],
-    isVerified: { type: Boolean, default: false },
+    verified: { type: Boolean, default: false },
     topics: [TopicSchema],
   },
   { timestamps: true }
 );
 
-UserSchema.pre("save", function (next) {
-  if (this.password && this.isModified("password")) {
-    this.password = bcrypt.hashSync(this.password, bcrypt.genSaltSync(8));
+UserSchema.pre<User>("save", async function (next) {
+  if (this.isModified("password")) {
+    this.password = await bcrypt.hash(this.password, 10); 
   }
   next();
 });
 
-const userModel =
-  (mongoose.models.User as mongoose.Model<User>) ||
-  mongoose.model<User>("User", UserSchema);
+const UserModel: Model<User> = mongoose.models.User || mongoose.model<User>("User", UserSchema);
 
-export default userModel;
+export default UserModel;
