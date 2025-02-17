@@ -1,13 +1,13 @@
 import dbConnect from "@/lib/dbconnect";
 import userModel from "@/models/User";
-import { uerNameValidation } from "@/schemas/signUpSchema";
+import { userNameValidation } from "@/schemas/signUpSchema";
 import { verifySchema } from "@/schemas/verifySchema";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   const code = decodeURIComponent(req.nextUrl.searchParams.get("code") || "");
   const uname = decodeURIComponent(req.nextUrl.searchParams.get("uname") || "");
-  console.log(code,"here");
+  // console.log(code,"here");
   
   if (!code || !uname) {
     NextResponse.json(
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   try {
     // verify code and uname syntex
     const isValidCode = verifySchema.safeParse({verifyCode: code});
-    const isValiduname = uerNameValidation.safeParse(uname);
+    const isValiduname = userNameValidation.safeParse(uname);
 
     if (isValidCode.success === false || isValiduname.success === false) {
       return NextResponse.json(
@@ -39,11 +39,11 @@ export async function GET(req: NextRequest) {
       );
     }
     const isCodeValid = isUser.verifyCode === code;
-    const isCodeNotExpire = new Date(isUser.verifyCodeExpires) > new Date()
+    const isCodeNotExpire = isUser.verifyExpires ? new Date(isUser.verifyExpires) > new Date() : false;
     
 
    if(isCodeValid && isCodeNotExpire){
-    isUser.isVerified = true;
+    isUser.verified = true;
     await isUser.save();
     return NextResponse.json(
       { message: "Account is verified", success: true },
