@@ -7,10 +7,10 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   const code = decodeURIComponent(req.nextUrl.searchParams.get("code") || "");
   const uname = decodeURIComponent(req.nextUrl.searchParams.get("uname") || "");
-  // console.log(code,"here");
+  // console.log(code,uname,"here");
   
   if (!code || !uname) {
-    NextResponse.json(
+    return NextResponse.json(
       { message: "Invalid request", success: false },
       { status: 400 }
     );
@@ -31,10 +31,10 @@ export async function GET(req: NextRequest) {
 
     // check if the code is valid and related to uname
     const isUser = await userModel.findOne({ uname });
-
+    console.log(isUser)
     if (!isUser) {
       return NextResponse.json(
-        { message: "Invalid request", success: false },
+        { message: "Invalid request unable to user", success: false },
         { status: 400 }
       );
     }
