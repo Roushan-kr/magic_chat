@@ -18,7 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "./ui/button";
-import { Message } from "@/models/User";
+import { Message } from "@/models/Message";
 import axios, { AxiosError } from "axios";
 import { ApiResponse } from "@/types/ApiRespoonse";
 import { toast } from "@/hooks/use-toast";
@@ -36,7 +36,7 @@ function Messagecard({ message, onMessageDelete }: MessageCardProps) {
     try {
       const res = await axios.delete<ApiResponse>(`/api/msg/`,{
         data:{
-          messageid:message._id
+          messageId:message._id
         }
       })
         if(res.data.success){
@@ -44,7 +44,7 @@ function Messagecard({ message, onMessageDelete }: MessageCardProps) {
             title:"Message delated"
           })
         }
-        onMessageDelete(message._id.toString())
+        onMessageDelete((message._id as string).toString())
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>
       toast({
@@ -58,7 +58,7 @@ function Messagecard({ message, onMessageDelete }: MessageCardProps) {
     <Card className="card-bordered">
       <CardHeader>
         <div className="flex justify-between items-center">
-          <CardTitle>{message.content}</CardTitle>
+          <CardTitle>{message.text}</CardTitle>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant='destructive'>

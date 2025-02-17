@@ -44,7 +44,7 @@ function Verify() {
           title: "Your code verified",
           description: res.data.message || "Thanks for using us",
         });
-        return await router.replace("/sign-in");
+        return router.replace("/sign-in");
       }
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;

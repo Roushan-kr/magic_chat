@@ -50,7 +50,7 @@ function SignIn() {
         setUserNamemsg("");
         try {
           const res = await axios.get(
-            `/api/auth/cuiq-uname?uname=${userName}`
+            `/api/auth/cuiq-uname?u=${userName}`
           );
           setUserNamemsg(res.data?.message);
         } catch (error) {
@@ -123,7 +123,7 @@ function SignIn() {
                   {!checkValidUName && userNamemsg && (
                     <p
                       className={`text-sm ${
-                        userNamemsg === 'Username is abhilable'
+                        userNamemsg === 'Username is available'
                           ? 'text-green-500'
                           : 'text-red-500'
                       }`}

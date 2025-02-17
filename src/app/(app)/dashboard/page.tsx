@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
-import { Message } from "@/models/User";
+import { Message } from "@/models/Message";
 import { acceptMsgSchema } from "@/schemas/acceptMessageSchema";
 import { ApiResponse } from "@/types/ApiRespoonse";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,7 +21,7 @@ function Page() {
   const [isSwitchLoading, setIsSwitchLoading] = useState(false);
 
   const handelDelMsg = (msgId: string) => {
-    setMessages(messages.filter((msg) => msg._id.toString() !== msgId));
+    setMessages(messages.filter((msg) => (msg._id as string).toString() !== msgId));
   };
 
   const { data: session } = useSession();
@@ -48,7 +48,7 @@ function Page() {
           description: res.data?.message,
         });
       }
-      setValue("acceptMessage", res.data.isAcceptingMessage ?? false);
+      setValue("acceptMessage", res.data.allowMessage ?? false);
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse>;
       toast({
@@ -73,7 +73,7 @@ function Page() {
             description: res.data?.message,
           });
         }
-        setMessages(res.data.messages || []);
+        setMessages(res.data.data.messages || []);
         if (refresh) {
           toast({
             title: "Message Refreshed",
@@ -103,8 +103,8 @@ function Page() {
 
   const handelSwitchChange = async () => {
     try {
-      const res = await axios.post<ApiResponse>("/api/msg", {
-        acceptMsg: !acceptMessage,
+      const res = await axios.post<ApiResponse>("/api/msg/accept", {
+        allowMessages: !acceptMessage,
       });
       if (!res.data.success) {
         return toast({

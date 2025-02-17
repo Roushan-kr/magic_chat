@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { acceptMsgSchema: foundUser.allowMessages, success: true },
+      { allowMessage: foundUser.allowMessages, success: true },
       { status: 200 }
     );
   } catch (error: unknown) {
