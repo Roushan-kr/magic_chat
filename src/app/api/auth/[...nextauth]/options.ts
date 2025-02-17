@@ -2,7 +2,6 @@ import { NextAuthOptions } from "next-auth";
 import CrediantialProvider from "next-auth/providers/credentials";
 import dbConnect from "@/lib/dbconnect";
 import userModel from "@/models/User";
-import bcrypt from "bcrypt";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -31,10 +30,10 @@ export const authOptions: NextAuthOptions = {
           if (!user) {
             throw new Error("No user found");
           }
-          if (!user.isVerified) {
+          if (!user.verified) {
             throw new Error("User is not verified");
           }
-          const isValid = bcrypt.compare(Credential.password, user.password);
+          const isValid = user.comparePassword(Credential.password);
 
           if (!isValid) {
             throw new Error("Password is incorrect");
@@ -55,8 +54,8 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token._id = user._id?.toString();
-        token.isVerified = user.isVerified;
-        token.isAcceptingMessage = user.isAcceptingMessage;
+        token.verified = user.verified;
+        token.allowMessages = user.allowMessages;
         token.username = user.uname;
       }
       return token;
@@ -64,8 +63,8 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token) {
         session.user._id = token._id;
-        session.user.isAcceptingMessage = token.isAcceptingMessage;
-        session.user.isVerified = token.isVerified;
+        session.user.allowMessages = token.allowMessages;
+        session.user.verified = token.verified;
         session.user.username = token.username;
       }
       return session;
