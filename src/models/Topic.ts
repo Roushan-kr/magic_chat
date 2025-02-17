@@ -1,9 +1,9 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Model, Types, InferSchemaType } from "mongoose";
 
-// Topic Interface
-export interface Topic extends Document {
+// Topic Interface (Infer from Schema)
+export interface Topic {
   title: string;
-  messages: mongoose.Types.ObjectId[]; // References to Message collection
+  messages: Types.ObjectId[]; // References to Message collection
   createdAt: Date;
 }
 

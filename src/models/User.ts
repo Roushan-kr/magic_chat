@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Model, Types, Document } from "mongoose";
 import bcrypt from "bcrypt";
 
 // User Interface
@@ -9,9 +9,9 @@ export interface User extends Document {
   verifyCode?: string;
   verifyExpires?: Date;
   allowMessages: boolean;
-  messages: mongoose.Types.ObjectId[]; // References to Message collection
+  messages: Types.ObjectId[]; // References to Message collection
   verified: boolean;
-  topics: mongoose.Types.ObjectId[]; // References to Topic collection
+  topics: Types.ObjectId[]; // References to Topic collection
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -46,7 +46,7 @@ const UserSchema = new Schema<User>(
 );
 
 // Hash password before saving
-UserSchema.pre("save", async function (next) {
+UserSchema.pre<User>("save", async function (next) {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 10);
   }
@@ -60,6 +60,7 @@ UserSchema.methods.comparePassword = async function (
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-const UserModel: Model<User> = mongoose.models.User || mongoose.model<User>("User", UserSchema);
+const UserModel: Model<User> =
+  mongoose.models.User || mongoose.model<User>("User", UserSchema);
 
 export default UserModel;
