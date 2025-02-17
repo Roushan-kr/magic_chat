@@ -13,10 +13,8 @@ async function authenticateUser() {
   return session?.user || null;
 }
 
-
-
 export async function GET(req: NextRequest) {
-  const user:User = await authenticateUser();
+  const user: User = await authenticateUser();
   if (!user) {
     return NextResponse.json(
       { success: false, message: "Not authenticated" },
@@ -30,13 +28,17 @@ export async function GET(req: NextRequest) {
   const skip = (page - 1) * limit;
 
   try {
-    const messages = await MessageModel.find({ resiver: new mongoose.Types.ObjectId(user._id) })
+    const messages = await MessageModel.find<User>({
+      resiver: new mongoose.Types.ObjectId(user._id),
+    })
       .sort({ createdAt: -1 }) // Sort by latest messages
       .skip(skip)
       .limit(limit)
       .lean(); // Convert documents to plain JS objects
 
-    const totalMessages = await MessageModel.countDocuments({ resiver: user._id });
+    const totalMessages = await MessageModel.countDocuments({
+      receiver: user._id,
+    });
 
     return NextResponse.json({
       success: true,
@@ -51,12 +53,15 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error instanceof Error ? error.message : "Something went wrong" },
+      {
+        success: false,
+        message:
+          error instanceof Error ? error.message : "Something went wrong",
+      },
       { status: 500 }
     );
   }
 }
-
 
 export async function POST(req: NextRequest) {
   await dbConnect();
@@ -73,7 +78,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // Find receiver user by username
-    const receiver = await userModel.findOne({uname:username});
+    const receiver = await userModel.findOne({ uname: username });
     if (!receiver) {
       return NextResponse.json(
         { success: false, message: "User not found" },
@@ -89,14 +94,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Create a new message document
-    const newMessage = await MessageModel.create({
+    const newMessage: Message = await MessageModel.create({
       text: msg.data.content,
       createdAt: new Date(),
       resiver: receiver._id, // Store the receiver's ObjectId
     });
 
     // Store the message reference inside User model
-    receiver.messages.push(newMessage._id);
+    receiver.messages.push(newMessage._id as mongoose.Types.ObjectId);
     await receiver.save();
 
     return NextResponse.json(
@@ -105,7 +110,11 @@ export async function POST(req: NextRequest) {
     );
   } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error instanceof Error ? error.message : "Something went wrong" },
+      {
+        success: false,
+        message:
+          error instanceof Error ? error.message : "Something went wrong",
+      },
       { status: 500 }
     );
   }
@@ -142,9 +151,13 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Ensure the user owns the message (receiver)
-    if (message.resiver.toString() !== user._id) {
+    if (message.receiver.toString() !== user._id) {
       return NextResponse.json(
-        { success: false, message: "Unauthorized to delete this message", data: null },
+        {
+          success: false,
+          message: "Unauthorized to delete this message",
+          data: null,
+        },
         { status: 403 }
       );
     }
@@ -159,44 +172,62 @@ export async function DELETE(req: NextRequest) {
     );
 
     return NextResponse.json(
-      { success: true, message: "Message deleted successfully", data: { messageId } },
+      {
+        success: true,
+        message: "Message deleted successfully",
+        data: { messageId },
+      },
       { status: 200 }
     );
   } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error instanceof Error ? error.message : "Something went wrong", data: null },
+      {
+        success: false,
+        message:
+          error instanceof Error ? error.message : "Something went wrong",
+        data: null,
+      },
       { status: 500 }
     );
   }
 }
 
-
 export async function PUT(req: NextRequest) {
   await dbConnect();
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+
+  // Get authenticated user
+  const user = await authenticateUser();
+  if (!user) {
     return NextResponse.json(
-      { success: false, message: "You are not authenticated", error: "Unauthorized" },
+      { success: false, message: "Not authenticated", data: null },
       { status: 401 }
     );
   }
 
   try {
-    const { messageId, newContent } = await req.json();
+    const { messageId, content } = await req.json();
 
     // Validate inputs
-    if (!messageId || !newContent) {
+    if (!messageId || !content) {
       return NextResponse.json(
-        { success: false, message: "Missing required fields", error: "messageId and newContent are required" },
+        {
+          success: false,
+          message: "Missing required fields",
+          error: "messageId and content are required",
+        },
         { status: 400 }
       );
     }
 
     // Validate new message content
-    const parsed = msgSchema.safeParse({ content: newContent });
+    const parsed = msgSchema.safeParse({ content });
     if (!parsed.success) {
       return NextResponse.json(
-        { success: false, message: "Invalid message content", error: parsed.error.format() },
+        {
+          success: false,
+          message: "Invalid message content",
+          error: parsed.error.format(),
+        },
         { status: 400 }
       );
     }
@@ -210,9 +241,12 @@ export async function PUT(req: NextRequest) {
     }
 
     // Ensure only the receiver can update the message
-    if (message.resiver.toString() !== session.user._id) {
+    if (message.receiver.toString() !== user._id) {
       return NextResponse.json(
-        { success: false, message: "You are not authorized to update this message" },
+        {
+          success: false,
+          message: "You are not authorized to update this message",
+        },
         { status: 403 }
       );
     }
@@ -227,7 +261,11 @@ export async function PUT(req: NextRequest) {
     );
   } catch (error) {
     return NextResponse.json(
-      { success: false, message: "Something went wrong", error: error instanceof Error ? error.message : "Unknown error" },
+      {
+        success: false,
+        message: "Something went wrong",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

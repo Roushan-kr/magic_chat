@@ -22,7 +22,7 @@ const createResponse = (
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { topic?: string } }
+  { params }: { params: Promise<{ topic : string }> }
 ) {
   await dbConnect();
   const session = await getServerSession(authOptions);
@@ -40,9 +40,9 @@ export async function GET(
 
   try {
     let filter: any = { receiver: new mongoose.Types.ObjectId(`${userId}`) };
-
-    if (params.topic) {
-      const topic = await TopicModel.findOne({ _id: params.topic });
+    const utopic =  (await params).topic
+    if ( utopic) {
+      const topic = await TopicModel.findOne({ title: utopic });
       if (!topic) return createResponse(false, "Topic not found");
       filter.topic = topic._id;
     }
@@ -51,7 +51,7 @@ export async function GET(
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate("topic");
+      .populate("text");
 
     const totalMessages = await MessageModel.countDocuments(filter);
 
