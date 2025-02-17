@@ -9,7 +9,7 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   try {
     const { prompt } = (await req.json()) || {};
-
+    
     if (!prompt) {
       return NextResponse.json({
         success: false,
@@ -17,8 +17,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const parseMsg = msgSchema.safeParse({ content: prompt });
-
+    const parseMsg = msgSchema.safeParse({username:" " ,content: prompt });
     if (!parseMsg.success) {
       return NextResponse.json({
         success: false,
@@ -43,7 +42,7 @@ export async function POST(req: Request) {
       prompt: userPrompt,
       temperature: 0.7,
     });
-    // for debuging
+    // // for debuging
     // for await (const textPart of result.textStream) {
     //   console.log(textPart);
     // }
