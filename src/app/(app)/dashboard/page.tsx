@@ -21,7 +21,9 @@ function Page() {
   const [isSwitchLoading, setIsSwitchLoading] = useState(false);
 
   const handelDelMsg = (msgId: string) => {
-    setMessages(messages.filter((msg) => (msg._id as string).toString() !== msgId));
+    setMessages(
+      messages.filter((msg) => (msg._id as string).toString() !== msgId)
+    );
   };
 
   const { data: session } = useSession();
@@ -104,7 +106,7 @@ function Page() {
   const handelSwitchChange = async () => {
     try {
       const res = await axios.post<ApiResponse>("/api/msg/accept", {
-        allowMessages: !acceptMessage,
+          allowMessages: !acceptMessage,
       });
       if (!res.data.success) {
         return toast({
@@ -131,8 +133,11 @@ function Page() {
     return <>Please Login to Proside</>;
   }
   const { username } = session.user;
-  
-  const profileUrl = new URL(`u/${username}`, window.location.origin).toString();
+
+  const profileUrl = new URL(
+    `u/${username}`,
+    window.location.origin
+  ).toString();
   const copyToClipboard = async () => {
     navigator.clipboard
       .writeText(profileUrl)
@@ -191,7 +196,7 @@ function Page() {
         {messages.length > 0 ? (
           messages.map((message, index) => (
             <Messagecard
-            // issue for uknown
+              // issue for uknown
               key={message._id ? message._id.toString() : index}
               message={message}
               onMessageDelete={handelDelMsg}

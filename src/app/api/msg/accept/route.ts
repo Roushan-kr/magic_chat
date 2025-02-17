@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const { allowMessages } = await req.json();
-    const parsed = acceptMsgSchema.safeParse(allowMessages);
+    const parsed = acceptMsgSchema.safeParse({allowMessages});
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.format() },
