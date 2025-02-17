@@ -1,198 +1,233 @@
-import userModel, { Message } from "@/models/User";
+import userModel from "@/models/User";
 import { authOptions } from "../auth/[...nextauth]/options";
 import { getServerSession, User } from "next-auth";
 import dbConnect from "@/lib/dbconnect";
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { msgSchema } from "@/schemas/messageSchema";
+import MessageModel, { Message } from "@/models/Message";
 
-export async function GET() {
+async function authenticateUser() {
   await dbConnect();
-
   const session = await getServerSession(authOptions);
-  const user: User = session?.user;
+  return session?.user || null;
+}
 
-  if (!session || !user) {
+
+
+export async function GET(req: NextRequest) {
+  const user:User = await authenticateUser();
+  if (!user) {
     return NextResponse.json(
-      {
-        message: "You are not authenticated",
-        success: false,
-      },
+      { success: false, message: "Not authenticated" },
       { status: 401 }
     );
   }
 
-  const _id = new mongoose.Types.ObjectId(user?._id);
+  const { searchParams } = new URL(req.url);
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = Number(searchParams.get("limit")) || 10;
+  const skip = (page - 1) * limit;
 
   try {
-    const userMsg = await userModel.aggregate([
-      {
-        $match: { _id },
-      },
-      {
-        $unwind: "$messages",
-      },
-      {
-        $sort: { "messages.createdAt": -1 },
-      },
-      {
-        $group: {
-          _id: "$_id",
-          messages: {
-            $push: "$messages",
-          },
-        },
-      },
-    ]);
+    const messages = await MessageModel.find({ resiver: new mongoose.Types.ObjectId(user._id) })
+      .sort({ createdAt: -1 }) // Sort by latest messages
+      .skip(skip)
+      .limit(limit)
+      .lean(); // Convert documents to plain JS objects
 
-    if (!userMsg || userMsg.length === 0) {
-      return NextResponse.json(
-        {
-          message: "User Doesnot have any message ",
-          success: false,
-        },
-        { status: 400 }
-      );
-    }
+    const totalMessages = await MessageModel.countDocuments({ resiver: user._id });
 
-    return NextResponse.json(
-      {
-        message: "fetch success",
-        success: true,
-        messages: userMsg[0]?.messages,
+    return NextResponse.json({
+      success: true,
+      message: "Messages fetched successfully",
+      data: {
+        messages,
+        page,
+        limit,
+        totalMessages,
+        totalPages: Math.ceil(totalMessages / limit),
       },
-      { status: 200 }
-    );
+    });
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : "something went wrong";
     return NextResponse.json(
-      {
-        message: errorMessage,
-        success: false,
-      },
+      { success: false, message: error instanceof Error ? error.message : "Something went wrong" },
       { status: 500 }
     );
   }
 }
 
+
 export async function POST(req: NextRequest) {
   await dbConnect();
-
   const { username, content } = await req.json();
-  try {
-    const msg = msgSchema.safeParse({ content });
-    // handle the parsed message
 
-    if (!msg.success) {
+  // Validate message content
+  const msg = msgSchema.safeParse({ content });
+  if (!msg.success) {
+    return NextResponse.json(
+      { success: false, message: "Invalid content" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    // Find receiver user by username
+    const receiver = await userModel.findOne({uname:username});
+    if (!receiver) {
       return NextResponse.json(
-        {
-          message: "unable to parse content",
-          success: false,
-        },
-        { status: 401 }
-      );
-    }
-    const user = await userModel.findOne({ uname: username });
-    if (!user) {
-      return NextResponse.json(
-        {
-          message: "unable to get user by username",
-          success: false,
-        },
+        { success: false, message: "User not found" },
         { status: 404 }
       );
     }
-    if (!user.isAcceptingMessage) {
+
+    if (!receiver.allowMessages) {
       return NextResponse.json(
-        {
-          message: "user not accepting msg",
-          success: true,
-        },
+        { success: false, message: "User is not accepting messages" },
         { status: 403 }
       );
     }
 
-    user.messages.push({
-      content: msg.data.content,
+    // Create a new message document
+    const newMessage = await MessageModel.create({
+      text: msg.data.content,
       createdAt: new Date(),
-    } as Message);
+      resiver: receiver._id, // Store the receiver's ObjectId
+    });
 
-    await user.save();
+    // Store the message reference inside User model
+    receiver.messages.push(newMessage._id);
+    await receiver.save();
+
     return NextResponse.json(
-      {
-        message: "msg sent success",
-        success: true,
-      },
+      { success: true, message: "Message sent successfully", data: newMessage },
       { status: 200 }
     );
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : "something went wrong";
     return NextResponse.json(
-      {
-        message: errorMessage,
-        success: false,
-      },
+      { success: false, message: error instanceof Error ? error.message : "Something went wrong" },
       { status: 500 }
     );
   }
 }
 
 export async function DELETE(req: NextRequest) {
-  const { messageid } = await req.json();
-  if (!messageid) {
+  await dbConnect();
+  const { messageId } = await req.json();
+
+  if (!messageId) {
     return NextResponse.json(
-      {
-        sucess: false,
-        message: "No message id found",
-      },
-      {
-        status: 400,
-      }
+      { success: false, message: "No message ID provided", data: null },
+      { status: 400 }
     );
   }
 
-  const session = await getServerSession(authOptions);
-  const _user: User = session?.user;
-
-  if (!session || !_user) {
+  // Get authenticated user
+  const user = await authenticateUser();
+  if (!user) {
     return NextResponse.json(
-      { success: false, message: "Not authenticated" },
+      { success: false, message: "Not authenticated", data: null },
       { status: 401 }
     );
   }
-  dbConnect();
-  try {
-    const updatedResult = await userModel.updateOne(
-      { _id: _user._id },
-      {
-        $pull: {
-          messages: {
-            _id: messageid,
-          },
-        },
-      }
-    );
 
-    if (updatedResult.modifiedCount === 0) {
+  try {
+    // Find the message to ensure it exists
+    const message = await MessageModel.findById(messageId);
+    if (!message) {
       return NextResponse.json(
-        { success: false, message: "Either message is deleted or not exixt" },
+        { success: false, message: "Message not found", data: null },
         { status: 404 }
       );
     }
+
+    // Ensure the user owns the message (receiver)
+    if (message.resiver.toString() !== user._id) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized to delete this message", data: null },
+        { status: 403 }
+      );
+    }
+
+    // Delete the message from `MessageModel`
+    await MessageModel.deleteOne({ _id: messageId });
+
+    // Remove message reference from User
+    await userModel.updateOne(
+      { _id: user._id },
+      { $pull: { messages: messageId } }
+    );
+
     return NextResponse.json(
-      { success: true, message: "message deleted successfull" },
+      { success: true, message: "Message deleted successfully", data: { messageId } },
       { status: 200 }
     );
   } catch (error: unknown) {
-    const errorMessage =
-      error instanceof Error ? error.message : "something went wrong";
     return NextResponse.json(
-      {
-        message: errorMessage,
-        success: false,
-      },
+      { success: false, message: error instanceof Error ? error.message : "Something went wrong", data: null },
+      { status: 500 }
+    );
+  }
+}
+
+
+export async function PUT(req: NextRequest) {
+  await dbConnect();
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json(
+      { success: false, message: "You are not authenticated", error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  try {
+    const { messageId, newContent } = await req.json();
+
+    // Validate inputs
+    if (!messageId || !newContent) {
+      return NextResponse.json(
+        { success: false, message: "Missing required fields", error: "messageId and newContent are required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate new message content
+    const parsed = msgSchema.safeParse({ content: newContent });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { success: false, message: "Invalid message content", error: parsed.error.format() },
+        { status: 400 }
+      );
+    }
+
+    const message = await MessageModel.findById(messageId);
+    if (!message) {
+      return NextResponse.json(
+        { success: false, message: "Message not found" },
+        { status: 404 }
+      );
+    }
+
+    // Ensure only the receiver can update the message
+    if (message.resiver.toString() !== session.user._id) {
+      return NextResponse.json(
+        { success: false, message: "You are not authorized to update this message" },
+        { status: 403 }
+      );
+    }
+
+    // Update message content
+    message.text = parsed.data.content;
+    await message.save();
+
+    return NextResponse.json(
+      { success: true, message: "Message updated successfully", data: message },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, message: "Something went wrong", error: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
   }

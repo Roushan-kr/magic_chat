@@ -1,109 +1,64 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import dbConnect from "@/lib/dbconnect";
 import userModel from "@/models/User";
 import { authOptions } from "../../auth/[...nextauth]/options";
-import { getServerSession, User } from "next-auth";
-import dbConnect from "@/lib/dbconnect";
-import { NextRequest, NextResponse } from "next/server";
+import { acceptMsgSchema } from "@/schemas/acceptMessageSchema";
 
-export async function POST(req: NextRequest) {
+async function authenticateUser() {
   await dbConnect();
   const session = await getServerSession(authOptions);
-  const user: User = session?.user;
+  return session?.user || null;
+}
 
-  if (!session || !user) {
-    NextResponse.json(
-      {
-        message: "You are not authenticated",
-        success: false,
-      },
-      { status: 401 }
-    );
+export async function POST(req: NextRequest) {
+  const user = await authenticateUser();
+  if (!user) {
+    return NextResponse.json({ message: "You are not authenticated" }, { status: 401 });
   }
 
-  const _id = user?._id;
-
-  const { acceptMsg } = await req.json();
-
-  if (acceptMsg === undefined) {
-    return NextResponse.json(
-      {
-        message: "Please provide acceptMsg",
-        success: false,
-      },
-      { status: 400 }
-    );
-  }
   try {
-    const data = await userModel.findByIdAndUpdate(
-      _id,
-      { isAcceptingMessage: acceptMsg },
+    const body = await req.json();
+    const parsed = acceptMsgSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.format() }, { status: 400 });
+    }
+
+    const updatedUser = await userModel.findByIdAndUpdate(
+      user._id,
+      { isAcceptingMessage: parsed.data.acceptMessage },
       { new: true }
     );
 
-    if (data) {
-      return NextResponse.json(
-        {
-          message: "user acceptMsg updated successfully",
-          success: true,
-          data,
-        },
-        { status: 200 }
-      );
+    if (!updatedUser) {
+      throw new Error("Failed to update user acceptMsg");
     }
-    throw new Error("faild to update user acceptMsg");
-  } catch (error) {
+
+    return NextResponse.json({ message: "User acceptMsg updated successfully", success: true }, { status: 200 });
+  } catch (error: unknown) {
     return NextResponse.json(
-      {
-        message: "faild to update user acceptMsg",
-        success: false,
-        error,
-      },
+      { message: error instanceof Error ? error.message : "Something went wrong" },
       { status: 500 }
     );
   }
 }
 
-export async function GET() {
-  await dbConnect();
-  const session = await getServerSession(authOptions);
-  const user: User = session?.user;
-
-  if (!session || !user) {
-    NextResponse.json(
-      {
-        message: "You are not authenticated",
-        success: false,
-      },
-      { status: 401 }
-    );
+export async function GET(req:NextRequest) {
+  const user = await authenticateUser();
+  if (!user) {
+    return NextResponse.json({ message: "You are not authenticated" }, { status: 401 });
   }
 
-  const _id = user?._id;
-
   try {
-    const user = await userModel.findById(_id);
-    if (!user) {
-      return NextResponse.json(
-        {
-          message: "unable to get user",
-          success: false,
-        },
-        { status: 404 }
-      );
+    const foundUser = await userModel.findById(user._id);
+    if (!foundUser) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
-    return NextResponse.json(
-      {
-        success: true,
-        isAcceptingMessage: user?.isAcceptingMessage,
-      },
-      { status: 200 }
-    );
+
+    return NextResponse.json({ isAcceptingMessage: foundUser.allowMessages, success: true }, { status: 200 });
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "something went wrong";
     return NextResponse.json(
-      {
-        message: errorMessage,
-        success: false,
-      },
+      { message: error instanceof Error ? error.message : "Something went wrong" },
       { status: 500 }
     );
   }

@@ -1,114 +1,179 @@
-// this route handel Topics in user model
-
-import dbConnect from "@/lib/dbconnect";
-import { getServerSession, User } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { authOptions } from "../../../auth/[...nextauth]/options";
+import { getServerSession } from "next-auth";
+import mongoose from "mongoose";
+import dbConnect from "@/lib/dbconnect";
+import MessageModel from "@/models/Message";
+import TopicModel from "@/models/Topic";
 import userModel from "@/models/User";
+import { msgSchema } from "@/schemas/messageSchema";
+import { ApiResponse } from "@/types/ApiRespoonse";
+import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 
-export async function GET(req: NextRequest, {params}:{params:Promise<{topic:string}>}) {
+// Helper to create API responses
+const createResponse = (
+  success: boolean,
+  message: string,
+  extra?: Partial<ApiResponse>
+) =>
+  NextResponse.json(
+    { success, message, ...extra },
+    { status: success ? 200 : 400 }
+  );
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { topic?: string } }
+) {
   await dbConnect();
   const session = await getServerSession(authOptions);
-  const user: User = session?.user;
-
-  if (!session || !user) {
-    NextResponse.json(
-      {
-        message: "You are not authenticated",
-        success: false,
-      },
-      { status: 401 }
-    );
+  if (!session?.user) {
+    return createResponse(false, "You are not authenticated", {
+      error: "Unauthorized",
+    });
   }
 
-  const _id = user?._id;
-  const tName = (await params).topic;
+  const userId = session.user._id;
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const limit = parseInt(searchParams.get("limit") || "10", 10);
+  const skip = (page - 1) * limit;
 
   try {
-    const user = await userModel.findById(_id);
-    if (!user) {
-      return NextResponse.json(
-        {
-          message: "unable to get user",
-        },
-        { status: 404 }
-      );
+    let filter: any = { receiver: new mongoose.Types.ObjectId(`${userId}`) };
+
+    if (params.topic) {
+      const topic = await TopicModel.findOne({ _id: params.topic });
+      if (!topic) return createResponse(false, "Topic not found");
+      filter.topic = topic._id;
     }
-    const topics = user.topics;
-    if (tName) {
-      const userTopic = topics?.map((t) => t.name);
-      return NextResponse.json(
-        {
-          message: "fetch user topics list",
-          success: true,
-          userTopic,
-        },
-        { status: 200 }
-      );
+
+    const messages = await MessageModel.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("topic");
+
+    const totalMessages = await MessageModel.countDocuments(filter);
+
+    return createResponse(true, "Messages fetched successfully", {
+      messages,
+      data: {
+        page,
+        limit,
+        totalMessages,
+        totalPages: Math.ceil(totalMessages / limit),
+      },
+    });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      return createResponse(false, "Something went wrong", {
+        error: error.message,
+      });
+    } else {
+      return createResponse(false, "Something went wrong", {
+        error: "Unknown error",
+      });
     }
-    return NextResponse.json(
-      {
-        message: "fetch user topics",
-        success: true,
-        topics,
-      },
-      { status: 200 }
-    );
-  } catch (error) {
-    return NextResponse.json(
-      {
-        message: "Internal server error",
-      },
-      { status: 500 }
-    );
   }
 }
 
-export async function POST(req: NextRequest,{ params }: { params: Promise<{ topic: string }> }) {
+export async function DELETE(req: NextRequest) {
   await dbConnect();
   const session = await getServerSession(authOptions);
-  const user: User = session?.user;
+  if (!session?.user) {
+    return createResponse(false, "You are not authenticated", {
+      error: "Unauthorized",
+    });
+  }
 
-  const _id = user?._id;
-
+  const { messageId } = await req.json();
+  if (!messageId) {
+    return createResponse(false, "Message ID is required", {
+      error: "Missing messageId",
+    });
+  }
 
   try {
-    const user = await userModel.findById(_id);
-    if (!user) {
-      return NextResponse.json(
-        {
-          message: "unable to get user",
-        },
-        { status: 404 }
+    const message = await MessageModel.findOne({
+      _id: messageId,
+      receiver: session.user._id,
+    });
+    if (!message)
+      return createResponse(
+        false,
+        "Message not found or not authorized to delete"
       );
+
+    await MessageModel.deleteOne({ _id: messageId });
+    await TopicModel.updateMany({}, { $pull: { messages: messageId } });
+
+    return createResponse(true, "Message deleted successfully");
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      return createResponse(false, "Something went wrong", {
+        error: error.message,
+      });
+    } else {
+      return createResponse(false, "Something went wrong", {
+        error: "Unknown error",
+      });
     }
-    const topics = user.topics;
-    const tName = (await params).topic
-    if (tName) {
-      const userTopic = topics?.map((t) => t.name);
-      return NextResponse.json(
-        {
-          message: "fetch user topics list",
-          success: true,
-          userTopic,
-        },
-        { status: 200 }
-      );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  await dbConnect();
+  const { receiverId, content, topicTitle } = await req.json();
+
+  // Validate input
+  const parsed = msgSchema.safeParse({ content });
+  if (!parsed.success) {
+    return createResponse(false, "Invalid message content", {
+      error: parsed.error.format(),
+    });
+  }
+
+  try {
+    const receiver = await userModel.findById(receiverId);
+    if (!receiver) {
+      return createResponse(false, "Receiver not found");
     }
-    return NextResponse.json(
-      {
-        message: "fetch user topics",
-        success: true,
-        topics,
-      },
-      { status: 200 }
+
+    if (!receiver.allowMessages) {
+      return createResponse(false, "Receiver is not accepting messages");
+    }
+
+    // Find or create the topic
+    let topic = await TopicModel.findOne({
+      title: topicTitle.toLowerCase().trim(),
+    });
+    if (!topic) {
+      topic = await TopicModel.create({ title: topicTitle, messages: [] });
+    }
+
+    const newMessage = await MessageModel.create({
+      text: parsed.data.content,
+      receiver: receiverId,
+      createdAt: new Date(),
+    });
+
+    await TopicModel.updateOne(
+      { _id: topic._id },
+      { $push: { messages: newMessage._id } }
     );
-  } catch (error) {
-    return NextResponse.json(
-      {
-        message: "Internal server error",
-      },
-      { status: 500 }
-    );
+
+    return createResponse(true, "Message sent successfully", {
+      data: newMessage,
+    });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      return createResponse(false, "Something went wrong", {
+        error: error.message,
+      });
+    } else {
+      return createResponse(false, "Something went wrong", {
+        error: "Unknown error",
+      });
+    }
   }
 }

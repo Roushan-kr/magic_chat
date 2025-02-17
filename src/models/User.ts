@@ -1,46 +1,21 @@
-import mongoose, { Schema, Document, Types, Model } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 import bcrypt from "bcrypt";
 
-// Message Schema
-export interface Message extends Document {
-  _id: Types.ObjectId;
-  text: string;
-  createdAt: Date;
-}
-
-const MessageSchema = new Schema<Message>({
-  text: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-});
-
-//  Topic Schema
-export interface Topic extends Document {
-  _id: Types.ObjectId;
-  title: string;
-  messages: Message[];
-  createdAt: Date;
-}
-
-const TopicSchema = new Schema<Topic>({
-  title: { type: String, required: true, lowercase: true, trim: true },
-  messages: [MessageSchema],
-  createdAt: { type: Date, default: Date.now },
-});
-
-//  User Schema
+// User Interface
 export interface User extends Document {
-  _id: Types.ObjectId;
   uname: string;
   email: string;
   password: string;
   verifyCode?: string;
   verifyExpires?: Date;
   allowMessages: boolean;
-  messages: Message[];
+  messages: mongoose.Types.ObjectId[]; // References to Message collection
   verified: boolean;
-  topics?: Topic[];
+  topics: mongoose.Types.ObjectId[]; // References to Topic collection
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
+// User Schema
 const UserSchema = new Schema<User>(
   {
     uname: {
@@ -48,32 +23,42 @@ const UserSchema = new Schema<User>(
       required: [true, "Username is required!"],
       trim: true,
       unique: true,
-      index: true, 
+      index: true,
     },
     email: {
       type: String,
-      required: true,
+      required: [true, "Email is required!"],
       unique: true,
-      match: [/^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/, "Invalid email!"],
-      index: true, 
+      lowercase: true,
+      trim: true,
+      match: [/^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/, "Invalid email format!"],
+      index: true,
     },
     password: { type: String, required: true },
     verifyCode: { type: String },
     verifyExpires: { type: Date },
     allowMessages: { type: Boolean, default: true },
-    messages: [MessageSchema],
+    messages: [{ type: Schema.Types.ObjectId, ref: "Message" }], // Reference to messages
     verified: { type: Boolean, default: false },
-    topics: [TopicSchema],
+    topics: [{ type: Schema.Types.ObjectId, ref: "Topic" }], // Reference to topics
   },
   { timestamps: true }
 );
 
-UserSchema.pre<User>("save", async function (next) {
+// Hash password before saving
+UserSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
-    this.password = await bcrypt.hash(this.password, 10); 
+    this.password = await bcrypt.hash(this.password, 10);
   }
   next();
 });
+
+// Method to compare password
+UserSchema.methods.comparePassword = async function (
+  candidatePassword: string
+): Promise<boolean> {
+  return bcrypt.compare(candidatePassword, this.password);
+};
 
 const UserModel: Model<User> = mongoose.models.User || mongoose.model<User>("User", UserSchema);
 

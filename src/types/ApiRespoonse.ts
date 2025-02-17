@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Message } from "@/models/User";
+import { Message } from "@/models/Message";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface ApiResponse {
     success: boolean;
     message: string;
