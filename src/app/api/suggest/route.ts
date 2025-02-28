@@ -25,7 +25,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const userPrompt = `${parseMsg.data.content} , now create a list of string response seprated by '|| ' using the above text like a suggesation with that context as user text response within 5 to 10 words also remember it is response like text communaction act like a keybord don't include that text which i give prevous to you just give || saprated little sentence suggesation `;
+    const userPrompt = `${parseMsg.data.content} , now create a list of string response seprated by '|| ' using the above text like a suggesation with that context as user text response within a semarized manner that help them sayining that text in sorter collection of  words also remember it is response like text communaction act like a keybord suggestion don't include that text which i give prevous to you just give, use '||' saprated those sentence suggesation  overall act as comminication expert channel that sugest user message act like a google assistance which saperate their respone with '||' `;
 
     const result = streamText({
       model: google("gemini-1.5-pro-latest"
