@@ -48,7 +48,8 @@ export async function POST(req: Request) {
     const hashPassword = await bcrypt.hash(password, 10);
     const verifyCode = generateVerificationCode();
 
-    const newUser = await userModel.create({
+    // const newUser = 
+    await userModel.create({
       uname: username,
       email,
       password: hashPassword,

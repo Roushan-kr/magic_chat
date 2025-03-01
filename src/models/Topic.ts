@@ -1,4 +1,4 @@
-import mongoose, { Schema, Model, Types, InferSchemaType } from "mongoose";
+import mongoose, { Schema, Model, Types } from "mongoose";
 
 // Topic Interface (Infer from Schema)
 export interface Topic {

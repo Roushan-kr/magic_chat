@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const user = await authenticateUser();
   if (!user) {
     return NextResponse.json(

@@ -1,8 +1,8 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./api/auth/[...nextauth]/options";
 
-export async function middleware(req: NextRequest) {
+export async function middleware() {
     const session = await getServerSession(authOptions);
     const user = session?.user;
 
