@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import mongoose from "mongoose";
+import mongoose, {Types} from "mongoose";
 import dbConnect from "@/lib/dbconnect";
 import MessageModel from "@/models/Message";
 import TopicModel from "@/models/Topic";
