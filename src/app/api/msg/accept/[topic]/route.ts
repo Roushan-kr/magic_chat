@@ -22,7 +22,7 @@ const createResponse = (
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ topic : string }> }
+  { params }: { params: { topic: string } }
 ) {
   await dbConnect();
   const session = await getServerSession(authOptions);
@@ -39,12 +39,21 @@ export async function GET(
   const skip = (page - 1) * limit;
 
   try {
-    let filter: any = { receiver: new mongoose.Types.ObjectId(`${userId}`) };
-    const utopic =  (await params).topic
-    if ( utopic) {
-      const topic = await TopicModel.findOne({ title: utopic });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const filter: any = { receiver: new mongoose.Types.ObjectId(`${userId}`) };
+    const utopic = params.topic;
+    let messageIds: Types.ObjectId[] = [];
+
+    if (utopic) {
+      const topic = await TopicModel.findOne({
+        title: utopic.toLowerCase().trim(),
+      });
       if (!topic) return createResponse(false, "Topic not found");
-      filter.topic = topic._id;
+      messageIds = topic.messages;
+    }
+
+    if (messageIds.length > 0) {
+      filter._id = { $in: messageIds };
     }
 
     const messages = await MessageModel.find(filter)
@@ -65,15 +74,9 @@ export async function GET(
       },
     });
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      return createResponse(false, "Something went wrong", {
-        error: error.message,
-      });
-    } else {
-      return createResponse(false, "Something went wrong", {
-        error: "Unknown error",
-      });
-    }
+    return createResponse(false, "Something went wrong", {
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 }
 
@@ -109,15 +112,9 @@ export async function DELETE(req: NextRequest) {
 
     return createResponse(true, "Message deleted successfully");
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      return createResponse(false, "Something went wrong", {
-        error: error.message,
-      });
-    } else {
-      return createResponse(false, "Something went wrong", {
-        error: "Unknown error",
-      });
-    }
+    return createResponse(false, "Something went wrong", {
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 }
 
@@ -166,14 +163,56 @@ export async function POST(req: NextRequest) {
       data: newMessage,
     });
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      return createResponse(false, "Something went wrong", {
-        error: error.message,
-      });
-    } else {
-      return createResponse(false, "Something went wrong", {
-        error: "Unknown error",
-      });
-    }
+    return createResponse(false, "Something went wrong", {
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  await dbConnect();
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return createResponse(false, "You are not authenticated", {
+      error: "Unauthorized",
+    });
+  }
+
+  const { messageId, newContent } = await req.json();
+  if (!messageId || !newContent) {
+    return createResponse(false, "Message ID and new content are required", {
+      error: "Missing parameters",
+    });
+  }
+
+  // Validate new content
+  const parsed = msgSchema.safeParse({ content: newContent });
+  if (!parsed.success) {
+    return createResponse(false, "Invalid message content", {
+      error: parsed.error.format(),
+    });
+  }
+
+  try {
+    const message = await MessageModel.findOne({
+      _id: messageId,
+      receiver: session.user._id,
+    });
+    if (!message)
+      return createResponse(
+        false,
+        "Message not found or not authorized to update"
+      );
+
+    message.text = parsed.data.content;
+    await message.save();
+
+    return createResponse(true, "Message updated successfully", {
+      data: message,
+    });
+  } catch (error: unknown) {
+    return createResponse(false, "Something went wrong", {
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 }
