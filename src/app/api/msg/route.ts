@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     
     
     // Store the message reference inside User model
-    receiver.messages.push(newMessage._id as ObjectId);
+    receiver.messages.push(newMessage._id as mongoose.Types.ObjectId);
     await receiver.save();
 
     return NextResponse.json(
