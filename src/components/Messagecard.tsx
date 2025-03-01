@@ -43,7 +43,6 @@ function MessageCard({ message, onMessageDelete }: MessageCardProps) {
         toast({
           title: "Message deleted successfully",
           description: "The message has been permanently removed",
-          variant: "success",
         });
         onMessageDelete((message._id as string).toString());
       }
