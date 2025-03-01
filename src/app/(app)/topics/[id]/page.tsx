@@ -21,7 +21,8 @@ type Topic = {
 
 export default function TopicPage() {
   const params = useParams();
-  const { id } = params;
+  // Ensure id is properly typed
+  const id = params?.id as string;
   const { data: session } = useSession();
   
   const [topic, setTopic] = useState<Topic | null>(null);
@@ -52,9 +53,12 @@ export default function TopicPage() {
     }
   }, [id]);
 
+  // Use effect with proper dependencies
   useEffect(() => {
-    fetchTopic();
-  }, [fetchTopic]); // Now properly including fetchTopic in the dependency array
+    if (id) {
+      fetchTopic();
+    }
+  }, [fetchTopic, id]);
 
   // Add a new message
   const handleAddMessage = async (e: FormEvent) => {

@@ -78,22 +78,18 @@ export async function POST(
       return createResponse(false, "Topic not found", {}, 404);
     }
     
-    // Create a new message using the Message model
+    // Create a new message using the Message model with proper ObjectId handling
     const newMessage = new MessageModel({
       text: validatedData.content,
       createdAt: new Date(),
-      receiver: new Types.ObjectId(topic._id), // Convert to ObjectId
+      receiver: topic._id, // Mongoose will convert string to ObjectId automatically
     });
     
     // Save the message
     const savedMessage = await newMessage.save();
     
-    // Add message reference to topic correctly
-    if (!topic.messages) {
-      topic.messages = [];
-    }
-    
-    // Push the ObjectId, not the whole message
+    // Add message reference to topic safely
+    topic.messages = Array.isArray(topic.messages) ? topic.messages : [];
     topic.messages.push(savedMessage._id);
     await topic.save();
     

@@ -115,6 +115,8 @@ export default function TopicsPage() {
       return;
     }
 
+    // Add ESLint disable for intentional non-null assertion
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const filtered = topics.filter((topic) =>
       topic.title.toLowerCase().includes(data.searchTerm!.toLowerCase())
     );

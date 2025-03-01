@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { useState } from "react";
+import { useState, MouseEvent } from "react";
 
 type TopicCardProps = {
   id: string;
@@ -23,7 +23,8 @@ export default function TopicCard({
     return new Date(dateString).toLocaleDateString();
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     if (confirm("Are you sure you want to delete this topic?")) {
       setIsDeleting(true);
       try {
