@@ -25,72 +25,90 @@ import { toast } from "@/hooks/use-toast";
 import dayjs from "dayjs";
 import { X } from "lucide-react";
 
-
 type MessageCardProps = {
   message: Message;
   onMessageDelete: (messageId: string) => void;
 };
 
-function Messagecard({ message, onMessageDelete }: MessageCardProps) {
- async function handleDeleteConfirm(): Promise<void> {
+function MessageCard({ message, onMessageDelete }: MessageCardProps) {
+  async function handleDeleteConfirm(): Promise<void> {
     try {
-      const res = await axios.delete<ApiResponse>(`/api/msg/`,{
-        data:{
-          messageId:message._id
+      const res = await axios.delete<ApiResponse>(`/api/msg/`, {
+        data: {
+          messageId: message._id
         }
-      })
-        if(res.data.success){
-          toast({
-            title:"Message delated"
-          })
-        }
-        onMessageDelete((message._id as string).toString())
+      });
+      
+      if(res.data.success) {
+        toast({
+          title: "Message deleted successfully",
+          description: "The message has been permanently removed",
+          variant: "success",
+        });
+        onMessageDelete((message._id as string).toString());
+      }
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse>
+      const axiosError = error as AxiosError<ApiResponse>;
       toast({
-        title:"unable to del Message",
-        description:axiosError.response?.data.error || "Try after some time"
-      })
+        title: "Error deleting message",
+        description: axiosError.response?.data.error || "An error occurred while deleting the message. Please try again later.",
+        variant: "destructive",
+      });
     }
   }
 
   return (
-    <Card className="card-bordered">
+    <Card className="message-card relative hover:shadow-md transition-shadow duration-200">
       <CardHeader>
         <div className="flex justify-between items-center">
-          <CardTitle>{message.text}</CardTitle>
+          <CardTitle>
+            <h2 className="text-lg font-semibold break-words" role="heading">
+              {message.text}
+            </h2>
+          </CardTitle>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant='destructive'>
+              <Button 
+                variant="destructive"
+                aria-label="Delete message"
+                className="hover:bg-red-600 transition-colors"
+              >
                 <X className="w-5 h-5" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete
-                  this message.
+                <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                <AlertDialogDescription className="text-gray-600">
+                  Are you sure you want to delete this message? This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteConfirm}>
-                  Continue
+                <AlertDialogCancel className="hover:bg-gray-100">Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleDeleteConfirm}
+                  className="bg-red-500 hover:bg-red-600"
+                >
+                  Delete
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
         </div>
-        <div className="text-sm">
+        <time 
+          dateTime={message.createdAt.toString()} 
+          className="text-sm text-gray-500"
+        >
           {dayjs(message.createdAt).format('MMM D, YYYY h:mm A')}
-        </div>
+        </time>
       </CardHeader>
-      <CardContent></CardContent>
+      <CardContent className="pt-2">
+        <p className="text-gray-700 break-words">
+          {message.text}
+        </p>
+      </CardContent>
     </Card>
   );
 }
 
-export default Messagecard;
+export default MessageCard;
