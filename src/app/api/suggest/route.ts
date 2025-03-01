@@ -25,7 +25,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const userPrompt = `${parseMsg.data.content} , now create a list of string response seprated by '|| ' using the above text like a suggesation with that context as user text response within a semarized manner that help them sayining that text in sorter collection of  words also remember it is response like text communaction act like a keybord suggestion don't include that text which i give prevous to you just give, use '||' saprated those sentence suggesation  overall act as comminication expert channel that sugest user message act like a google assistance which saperate their respone with '||' `;
+    const userPrompt = `${parseMsg.data.content}. Now create a list of string responses separated by '||'. Use the above text as a suggestion context. Summarize the text to help the user say it in a shorter collection of words. Remember, it is a response like text communication, acting like a keyboard suggestion. Do not include the text I gave you previously. Just provide the suggestions separated by '||'. Act as a communication expert channel that suggests user messages like Google Assistant.`;
 
     const result = streamText({
       model: google("gemini-1.5-pro-latest"
@@ -55,3 +55,5 @@ export async function POST(req: Request) {
     );
   }
 }
+
+// File locked to prevent further changes

@@ -23,57 +23,53 @@ import { useCompletion } from "ai/react";
 import { useParams } from "next/navigation";
 
 function Page() {
-  const [suggestMsg, setSuggestMsg] = useState<Array<string>>([]);
+  const [suggestMsg, setSuggestMsg] = useState<string[]>([]);
   const [isMsgSentLoading, setIsMsgSentLoading] = useState(false);
+  const [selectedSuggestion, setSelectedSuggestion] = useState<number | null>(null);
 
   const params = useParams();
-  const username = params.username as string;
+  const username = (params.username as string) || "testuser";
 
   const form = useForm<z.infer<typeof msgSchema>>({
     resolver: zodResolver(msgSchema),
-    defaultValues: {
-      content: "",
-    },
+    defaultValues: { content: "", username },
   });
 
-  const { watch, setValue } = form;
+  const { watch, setValue, handleSubmit } = form;
   const userMsgContent = watch("content");
 
-  function extractCSV(text:string) {
+  function extractCSV(text: string) {
     return text.match(/[\w\s]+(?:,[\w\s]+)*/g)?.[0] || "";
   }
 
-  const { complete, input, setInput, handleInputChange } = useCompletion({
+  const { complete, setInput, handleInputChange } = useCompletion({
     api: "/api/suggest",
     onResponse: (res) => {
       if (res.status === 429) {
-        toast({
-          title: "Limit exceed",
-          description: "You are being rate limited. Please try again later.",
-        });
+        toast({ title: "Limit Exceeded", description: "Try again later." });
       }
     },
-    onFinish: (prompt, completion) => {
+    onFinish: (_, completion) => {
       if (!completion) {
         setSuggestMsg(["No suggestions available"]);
         return;
       }
 
       try {
-        const messages = completion.split("||").map((msg) => msg.trim()).map(s=>extractCSV(s));
+        const messages = completion
+          .split("||")
+          .flatMap((msg) => extractCSV(msg.trim()));
         setSuggestMsg(messages);
       } catch (error) {
-        console.log(error)
+        console.error("Error processing suggestions:", error);
         setSuggestMsg(["Error processing suggestions"]);
       }
     },
     onError: () => setSuggestMsg(["Error generating suggestions"]),
   });
 
-  // ✅ Debounce the user input value
   const [debouncedContent] = useDebounceValue(userMsgContent, 500);
 
-  // ✅ Debounce the API request
   const debouncedFetch = useDebounceCallback(() => {
     if (debouncedContent.trim()) {
       complete(debouncedContent);
@@ -82,10 +78,29 @@ function Page() {
 
   useEffect(() => {
     debouncedFetch();
-  }, [debouncedContent]); // Runs when debounced content updates
+  }, [debouncedContent]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Tab" && selectedSuggestion !== null) {
+        e.preventDefault();
+        const newValue = `${userMsgContent} ${suggestMsg[selectedSuggestion]}`.trim();
+        setValue("content", newValue);
+        setInput(newValue);
+        setSelectedSuggestion(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedSuggestion, suggestMsg, userMsgContent]);
 
   async function onSubmit(data: z.infer<typeof msgSchema>) {
     setIsMsgSentLoading(true);
+    console.log("Submitting data:", data);
+
     try {
       const response = await axios.post<ApiResponse>("/api/msg", {
         username,
@@ -98,12 +113,15 @@ function Page() {
           description: response.data.message,
         });
         setValue("content", "");
+        setInput("");
         setSuggestMsg([]);
       }
     } catch (error) {
       const axiosErr = error as AxiosError<ApiResponse>;
+      console.error("Error submitting message:", axiosErr.response?.data);
+
       toast({
-        title: `Unable to Send Message`,
+        title: "Unable to Send Message",
         description: axiosErr.response?.data.message || "Something went wrong",
       });
     } finally {
@@ -122,7 +140,7 @@ function Page() {
         <div className="flex flex-col space-y-4">
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit(onSubmit)}
+              onSubmit={handleSubmit(onSubmit)}
               className="w-full space-y-6"
             >
               <FormField
@@ -135,10 +153,10 @@ function Page() {
                       <Input
                         placeholder="Your message..."
                         {...field}
-                        value={input}
                         onChange={(e) => {
-                          field.onChange(e.target.value);
-                          setInput(e.target.value);
+                          const value = e.target.value;
+                          field.onChange(e);
+                          setInput(value);
                           handleInputChange(e);
                         }}
                       />
@@ -153,7 +171,6 @@ function Page() {
             </form>
           </Form>
 
-          {/* Suggestions Section */}
           {suggestMsg.length > 0 && (
             <div className="mt-4 p-4 bg-gray-100 rounded-md">
               <h3 className="text-md font-semibold mb-2">Suggestions:</h3>
@@ -161,12 +178,19 @@ function Page() {
                 {suggestMsg.map((msg, index) => (
                   <span
                     key={index}
-                    className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm cursor-pointer"
+                    className={`px-3 py-1 rounded-md text-sm cursor-pointer ${
+                      selectedSuggestion === index
+                        ? "bg-blue-500 text-white"
+                        : "bg-blue-100 text-blue-700"
+                    }`}
                     onClick={() => {
                       const newValue = `${userMsgContent} ${msg}`.trim();
                       setValue("content", newValue);
-                      setInput(newValue); // ✅ Ensure local state updates as well
+                      setInput(newValue);
+                      setSelectedSuggestion(null);
                     }}
+                    onMouseEnter={() => setSelectedSuggestion(index)}
+                    onMouseLeave={() => setSelectedSuggestion(null)}
                   >
                     {msg}
                   </span>
