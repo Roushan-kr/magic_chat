@@ -3,7 +3,7 @@ import { authOptions } from "../auth/[...nextauth]/options";
 import { getServerSession, User } from "next-auth";
 import dbConnect from "@/lib/dbconnect";
 import { NextRequest, NextResponse } from "next/server";
-import mongoose from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
 import { msgSchema } from "@/schemas/messageSchema";
 import MessageModel, { Message } from "@/models/Message";
 
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const messages = await MessageModel.find<User>({
-      resiver: new mongoose.Types.ObjectId(user._id),
+      receiver: new mongoose.Types.ObjectId(user._id),
     })
       .sort({ createdAt: -1 }) // Sort by latest messages
       .skip(skip)
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
   const { username, content } = await req.json();
 
   // Validate message content
-  const msg = msgSchema.safeParse({ content });
+  const msg = msgSchema.safeParse({ username, content });
   if (!msg.success) {
     return NextResponse.json(
       { success: false, message: "Invalid content" },
@@ -97,11 +97,13 @@ export async function POST(req: NextRequest) {
     const newMessage: Message = await MessageModel.create({
       text: msg.data.content,
       createdAt: new Date(),
-      resiver: receiver._id, // Store the receiver's ObjectId
+      receiver: receiver._id as ObjectId, // Store the receiver's ObjectId
     });
-
+    console.log(newMessage);
+    
+    
     // Store the message reference inside User model
-    receiver.messages.push(newMessage._id as mongoose.Types.ObjectId);
+    receiver.messages.push(newMessage._id as ObjectId);
     await receiver.save();
 
     return NextResponse.json(
